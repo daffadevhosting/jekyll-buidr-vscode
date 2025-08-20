@@ -5,6 +5,7 @@ import fetch from 'node-fetch';
 import { initializeApp } from 'firebase/app';
 import { getAuth, signInWithCustomToken } from 'firebase/auth'; // Ganti import
 import { firebaseConfig } from './firebaseConfig';
+import { CreatePostViewProvider } from './CreatePostViewProvider';
 
 const firebaseApp = initializeApp(firebaseConfig);
 const auth = getAuth(firebaseApp);
@@ -161,6 +162,11 @@ export function activate(context: vscode.ExtensionContext) {
     });
 
     context.subscriptions.push(generateCommand);
+    const provider = new CreatePostViewProvider(context.extensionUri);
+
+    context.subscriptions.push(
+        vscode.window.registerWebviewViewProvider(CreatePostViewProvider.viewType, provider)
+    );
 }
 
 export function deactivate() {}
