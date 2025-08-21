@@ -1,7 +1,7 @@
 # Jekyll Buildr for VS Code
 
 ![Status](https://img.shields.io/badge/status-prerelease-yellow)
-![VS Code Marketplace](https://img.shields.io/visual-studio-marketplace/v/Daffadev.jekyll-buildr-vscode?label=Marketplace)
+![VS Code Marketplace](https://img.shields.io/visual-studio-marketplace/v/DaffaDev.jekyll-buildr?label=Marketplace)
 
 Supercharge alur kerja Jekyll Anda langsung di dalam Visual Studio Code. Ekstensi **Jekyll Buildr** membawa kekuatan AI generatif dari web app Jekyll Buildr ke dalam editor kode favorit Anda.
 
