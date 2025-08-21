@@ -4,6 +4,20 @@ All notable changes to the **Jekyll Buildr** VS Code extension will be documente
 
 ---
 
+## [0.1.2] - 2025-08-21
+
+### Update/Change
+
+* **`Backend PayPal API`**
+---
+
+## [0.1.1] - 2025-08-21
+
+### Added
+
+* **`Create Jekyll Buildr: Upgrade to Pro 👑` Command** button.
+---
+
 ## [0.1.0] - 2025-08-21
 
 ### Added
