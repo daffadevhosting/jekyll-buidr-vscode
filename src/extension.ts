@@ -359,6 +359,13 @@ export function activate(context: vscode.ExtensionContext) {
         });
         console.log('[DEBUG] After withProgress call.');
     }));
+    
+    // --- PERINTAH BARU UNTUK UPGRADE ---
+    context.subscriptions.push(vscode.commands.registerCommand('jekyll-buildr.upgradeToPro', () => {
+        vscode.window.showInformationMessage("Redirecting you to upgrade to Jekyll Buildr Pro...");
+        // Buka link ke halaman upgrade di webapp
+        vscode.env.openExternal(vscode.Uri.parse('https://jekyll-buildr.vercel.app/settings'));
+    }));
 }
 
 export function deactivate() {}

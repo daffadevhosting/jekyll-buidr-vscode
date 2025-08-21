@@ -32,6 +32,11 @@
         "command": "jekyll-buildr.generateComponent",
         "title": "Jekyll Buildr: Generate AI Component",
         "category": "Jekyll Buildr"
+      },
+      {
+        "command": "jekyll-buildr.upgradeToPro",
+        "title": "Jekyll Buildr: Upgrade to Pro 👑",
+        "category": "Jekyll Buildr"
       }
     ],
     "menus": {
@@ -41,7 +46,14 @@
           "command": "jekyll-buildr.generateComponent",
           "group": "navigation"
         }
-      ]
+      ],
+        "view/title": [
+            {
+                "command": "jekyll-buildr.upgradeToPro",
+                "when": "view == jekyllBuildr.createPostView && !jekyllBuildr.isPro",
+                "group": "navigation"
+            }
+        ]
     },
     "viewsContainers": {
       "activitybar": [
