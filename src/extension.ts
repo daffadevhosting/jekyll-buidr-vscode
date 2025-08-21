@@ -9,7 +9,7 @@ import { JEKYLL_BOILERPLATE_CONTENTS, JEKYLL_BOILERPLATE_STRUCTURE } from './boi
 
 const firebaseApp = initializeApp(firebaseConfig);
 const auth = getAuth(firebaseApp);
-const apiUrl = 'http://localhost:3000'; //'https://jekyll-buildr.vercel.app'
+const apiUrl = 'http://localhost:3000'; //'https://jekyll-buildr.vercel.app' atau 'http://localhost:3000
 
 let currentUser: { displayName: string | null; role: string; } | null = null;
 let idToken: string | null = null;
