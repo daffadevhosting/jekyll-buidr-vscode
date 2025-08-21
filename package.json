@@ -1,6 +1,6 @@
 {
-  "name": "jekyll-editor",
-  "displayName": "Jekyll Editor",
+  "name": "jekyll-buildr",
+  "displayName": "Jekyll Builder",
   "description": "AI-powered Jekyll editing right in your VS Code.",
   "version": "0.1.1",
   "publisher": "daffadev",
