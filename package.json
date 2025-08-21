@@ -1,21 +1,15 @@
 {
-  "name": "jekyll-buidr",
-  "publisher": "daffadev",
-  "displayName": "Jekyll Buidr",
-  "description": "Create, edit, and manage your Jekyll projects with an intuitive interface, supercharged by AI features and direct integration with GitHub.",
+  "name": "jekyll-editor",
+  "displayName": "Jekyll Editor",
+  "description": "AI-powered Jekyll editing right in your VS Code.",
   "version": "0.1.1",
+  "publisher": "daffadev",
   "icon": "media/icon.png",
   "engines": {
-    "vscode": "^1.103.0"
+    "vscode": "^1.85.0"
   },
   "categories": [
-    "Other",
-    "AI",
-    "Debuggers",
-    "Formatters",
-    "Machine Learning",
-    "Snippets",
-    "Programming Languages"
+    "Other"
   ],
   "activationEvents": [],
   "main": "./dist/extension.js",
@@ -28,6 +22,16 @@
       {
         "command": "jekyll-buildr.generateComponent",
         "title": "Jekyll Buildr: Generate Component with AI 👑"
+      },
+      {
+        "command": "jekyll-buildr.scaffoldBoilerplate",
+        "title": "Jekyll Buildr: Create Jekyll Boilerplate",
+        "category": "Jekyll Buildr"
+      },
+      {
+        "command": "jekyll-buildr.generateComponent",
+        "title": "Jekyll Buildr: Generate AI Component",
+        "category": "Jekyll Buildr"
       }
     ],
     "menus": {
@@ -54,48 +58,31 @@
           "id": "jekyllBuildr.createPostView",
           "name": "Create Post",
           "type": "webview",
-          "icon": "./media/icon.svg"
+          "icon": "media/icon.svg"
         }
       ]
     }
   },
   "scripts": {
-    "vscode:prepublish": "npm run package",
+    "vscode:prepublish": "npm run compile",
     "compile": "webpack",
     "watch": "webpack --watch",
-    "package": "webpack --mode production --devtool hidden-source-map",
-    "compile-tests": "tsc -p . --outDir out",
-    "watch-tests": "tsc -p . -w --outDir out",
-    "pretest": "npm run compile-tests && npm run compile && npm run lint",
-    "lint": "eslint src",
-    "test": "vscode-test",
-    "build:webview": "cd webview-ui && npm install && vite build",
-    "watch:webview": "cd webview-ui && npm install && vite build --watch"
+    "lint": "eslint src --ext ts"
   },
   "devDependencies": {
-    "@types/mocha": "^10.0.10",
-    "@types/node": "22.x",
+    "@types/vscode": "^1.85.0",
+    "@types/node": "18.x",
     "@types/node-fetch": "^2.6.13",
-    "@types/react": "^19.1.10",
-    "@types/react-dom": "^19.1.7",
-    "@types/vscode": "^1.103.0",
-    "@types/vscode-webview": "^1.57.5",
-    "@typescript-eslint/eslint-plugin": "^8.39.0",
-    "@typescript-eslint/parser": "^8.39.0",
-    "@vitejs/plugin-react": "^5.0.1",
-    "@vscode/test-cli": "^0.0.11",
-    "@vscode/test-electron": "^2.5.2",
-    "eslint": "^9.32.0",
-    "react": "^19.1.1",
-    "react-dom": "^19.1.1",
-    "ts-loader": "^9.5.2",
-    "typescript": "^5.9.2",
-    "vite": "^7.1.3",
-    "webpack": "^5.101.0",
-    "webpack-cli": "^6.0.1"
+    "@typescript-eslint/eslint-plugin": "^7.11.0",
+    "@typescript-eslint/parser": "^7.11.0",
+    "eslint": "^8.57.0",
+    "typescript": "^5.4.5",
+    "ts-loader": "^9.5.1",
+    "webpack": "^5.91.0",
+    "webpack-cli": "^5.1.4"
   },
   "dependencies": {
-    "firebase": "^12.1.0",
-    "node-fetch": "^2.7.0"
+    "node-fetch": "^2.7.0",
+    "firebase": "^10.12.2"
   }
 }
