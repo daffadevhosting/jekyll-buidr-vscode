@@ -1,7 +1,7 @@
 # Jekyll Buildr for VS Code
 
 ![Status](https://img.shields.io/badge/status-prerelease-yellow)
-![VS Code Marketplace](https://img.shields.io/visual-studio-marketplace/v/YOUR_PUBLISHER.jekyll-buildr-vscode?label=Marketplace)
+![VS Code Marketplace](https://img.shields.io/visual-studio-marketplace/v/DaffaDev.jekyll-buildr-vscode?label=Marketplace)
 
 Supercharge your Jekyll workflow directly inside Visual Studio Code. The **Jekyll Buildr** extension brings the power of the Jekyll Buildr web app and generative AI into your favorite code editor.
 
