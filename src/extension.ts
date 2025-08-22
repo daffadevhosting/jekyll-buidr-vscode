@@ -9,7 +9,7 @@ import { JEKYLL_BOILERPLATE_CONTENTS, JEKYLL_BOILERPLATE_STRUCTURE } from './boi
 
 const firebaseApp = initializeApp(firebaseConfig);
 const auth = getAuth(firebaseApp);
-const apiUrl = 'https://jekyll-buildr.vercel.app'; //'https://jekyll-buildr.vercel.app' atau 'http://localhost:3000
+const apiUrl = 'http://localhost:3000';
 
 let currentUser: { displayName: string | null; role: string; } | null = null;
 let idToken: string | null = null;
@@ -298,7 +298,7 @@ export function activate(context: vscode.ExtensionContext) {
         });
     }));
     
-// --- DEBUGGING BOILERPLATE: MELEWATI DIALOG KONFIRMASI ---
+    // --- DEBUGGING BOILERPLATE: MELEWATI DIALOG KONFIRMASI ---
     context.subscriptions.push(vscode.commands.registerCommand('jekyll-buildr.scaffoldBoilerplate', async () => {
         console.log('[DEBUG] Boilerplate command triggered.');
 
@@ -364,7 +364,79 @@ export function activate(context: vscode.ExtensionContext) {
     context.subscriptions.push(vscode.commands.registerCommand('jekyll-buildr.upgradeToPro', () => {
         vscode.window.showInformationMessage("Redirecting you to upgrade to Jekyll Buildr Pro...");
         // Buka link ke halaman upgrade di webapp
-        vscode.env.openExternal(vscode.Uri.parse('https://jekyll-buildr.vercel.app/settings'));
+        vscode.env.openExternal(vscode.Uri.parse(`${apiUrl}/settings`));
+    }));
+
+    // --- COMMAND BARU UNTUK GENERATE IMAGE ---
+    context.subscriptions.push(vscode.commands.registerCommand('jekyll-buildr.generateImage', async () => {
+        // Cek login
+        if (!currentUser || !idToken) {
+            const selection = await vscode.window.showWarningMessage(
+               'You must be logged in to use this feature.', 'Login', 'Cancel'
+           );
+           if (selection === 'Login') {
+               await loginAndFetchUser(postProvider, { silent: false });
+           }
+           return;
+       }
+
+        const workspaceFolders = vscode.workspace.workspaceFolders;
+        if (!workspaceFolders) {
+            vscode.window.showErrorMessage("Please open a project folder first.");
+            return;
+        }
+        const rootUri = workspaceFolders[0].uri;
+
+        // Minta prompt dari user
+        const prompt = await vscode.window.showInputBox({
+            prompt: "Describe the image you want to create",
+            placeHolder: "e.g., a futuristic cat wearing sunglasses, cyberpunk style"
+        });
+
+        if (!prompt) return; // User membatalkan
+
+        await vscode.window.withProgress({
+            location: vscode.ProgressLocation.Notification,
+            title: "Jekyll Buildr AI is creating your image...",
+            cancellable: false
+        }, async (progress) => {
+            try {
+                const response = await fetch(`${apiUrl}/api/ai/generateImage`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${idToken}` },
+                    body: JSON.stringify({ prompt }),
+                });
+
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.error || 'Failed to generate image.');
+                }
+
+                const { filename, content } = await response.json();
+
+                // `content` adalah data URI (e.g., "data:image/webp;base64,iVBORw...")
+                // Kita perlu mengambil bagian base64-nya saja
+                const base64Data = content.split(',')[1];
+                const imageBuffer = Buffer.from(base64Data, 'base64');
+
+                // Tentukan path untuk menyimpan gambar
+                const imagePath = vscode.Uri.joinPath(rootUri, 'assets', 'images', filename);
+
+                // Buat direktori jika belum ada
+                await vscode.workspace.fs.createDirectory(vscode.Uri.joinPath(rootUri, 'assets', 'images'));
+
+                // Simpan file
+                await vscode.workspace.fs.writeFile(imagePath, imageBuffer);
+
+                vscode.window.showInformationMessage(`Image '${filename}' saved successfully in assets/images!`);
+                
+                // Buka gambar yang baru dibuat
+                vscode.commands.executeCommand('vscode.open', imagePath);
+
+            } catch (error: any) {
+                vscode.window.showErrorMessage(`Image Generation Failed: ${error.message}`);
+            }
+        });
     }));
 }
 

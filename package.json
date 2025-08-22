@@ -27,7 +27,8 @@
       },
       {
         "command": "jekyll-buildr.generateComponent",
-        "title": "Jekyll Buildr: Generate Component with AI 👑"
+        "title": "Jekyll Buildr: Generate Component with AI 👑",
+        "category": "Jekyll Buildr"
       },
       {
         "command": "jekyll-buildr.scaffoldBoilerplate",
@@ -35,13 +36,13 @@
         "category": "Jekyll Buildr"
       },
       {
-        "command": "jekyll-buildr.generateComponent",
-        "title": "Jekyll Buildr: Generate AI Component",
+        "command": "jekyll-buildr.upgradeToPro",
+        "title": "Jekyll Buildr: Upgrade to Pro 👑",
         "category": "Jekyll Buildr"
       },
       {
-        "command": "jekyll-buildr.upgradeToPro",
-        "title": "Jekyll Buildr: Upgrade to Pro 👑",
+        "command": "jekyll-buildr.generateImage",
+        "title": "Jekyll Buildr: Generate Image with AI 👑",
         "category": "Jekyll Buildr"
       }
     ],
