@@ -5,19 +5,18 @@
 
 Supercharge alur kerja Jekyll Anda langsung di dalam Visual Studio Code. Ekstensi **Jekyll Buildr** membawa kekuatan AI generatif dari web app Jekyll Buildr ke dalam editor kode favorit Anda.
 
-![Jekyll Buildr Extension Demo](https://placehold.co/800x400?text=Demo+GIF+of+Extension+Features)
-
 ---
 
-## 🚧 Status Prerelease
+## 🚧 Status Release
 
-Harap dicatat bahwa ekstensi ini masih dalam tahap **prerelease**. Fitur-fitur mungkin masih dalam pengembangan dan Anda mungkin akan menemukan bug. Masukan Anda sangat kami hargai!
+Harap dicatat bahwa ekstensi ini masih dalam tahap **pengembangan**. Fitur-fitur mungkin masih dalam pengembangan dan Anda mungkin akan menemukan bug. Masukan Anda sangat kami hargai!
 
 ## ✨ Fitur Utama
 
 * **🤖 AI Post Generator**: Buat postingan blog baru dari sidebar. Cukup berikan judul, dan AI akan membuatkan konten Markdown yang relevan lengkap dengan *front matter*.
 * **🧠 AI Component Generator (Sadar Konteks)**: Jalankan perintah untuk membuat komponen Jekyll. AI akan menggunakan file yang sedang Anda buka sebagai konteks untuk menghasilkan kode yang lebih relevan.
 * **🚀 Jekyll Boilerplate**: Mulai proyek Jekyll baru dalam hitungan detik. Jalankan satu perintah untuk membuat seluruh struktur folder dan file dasar yang siap pakai.
+* **👑 Generate Image with AI**: Interactive command to create Image using AI, with context awareness from the currently post title.
 * **🔐 Sinkronisasi Login**: Login sekali menggunakan akun GitHub Anda, dan Anda akan terautentikasi di *webapp* dan ekstensi VS Code secara bersamaan, termasuk status akun Pro Anda.
 
 ---
@@ -56,6 +55,7 @@ Gunakan sidebar untuk membuat konten dengan cepat.
 * `Jekyll Buildr: Login` - Mengautentikasi Anda dengan akun Jekyll Buildr.
 * `Jekyll Buildr: Create Jekyll Boilerplate` - Membuat struktur proyek Jekyll standar.
 * `Jekyll Buildr: Generate AI Component` - Membuat file komponen baru menggunakan AI.
+* `Jekyll Buildr: Generate Image with AI 👑` - Membuat image untuk post blog menggunakan AI.
 
 ---
 

@@ -4,6 +4,13 @@ All notable changes to the **Jekyll Buildr** VS Code extension will be documente
 
 ---
 
+## [0.1.3] - 2025-08-22
+
+### Added
+
+* **`Jekyll Buildr: Generate Image with AI 👑` Command**: Interactive command to create Image using AI, with context awareness from the currently post title.
+---
+
 ## [0.1.2] - 2025-08-21
 
 ### Update/Change
