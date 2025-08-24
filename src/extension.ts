@@ -9,7 +9,12 @@ import { JEKYLL_BOILERPLATE_CONTENTS, JEKYLL_BOILERPLATE_STRUCTURE } from './boi
 
 const firebaseApp = initializeApp(firebaseConfig);
 const auth = getAuth(firebaseApp);
-const apiUrl = 'http://localhost:3000';
+
+// FIX: Make API URL configurable and add fallback
+const getApiUrl = (): string => {
+    const config = vscode.workspace.getConfiguration('jekyllBuildr');
+    return config.get('apiUrl') || 'https://jekyll-buildr.vercel.app'; // Default to production
+};
 
 let currentUser: { displayName: string | null; role: string; } | null = null;
 let idToken: string | null = null;
@@ -112,60 +117,103 @@ class CreatePostViewProvider implements vscode.WebviewViewProvider {
     }
 }
 
-// --- PERBAIKAN: Fungsi login sekarang lebih cerdas ---
+// FIX: Enhanced login function with better error handling and notifications
 async function loginAndFetchUser(postProvider: CreatePostViewProvider, options: { silent: boolean } = { silent: false }) {
-    const session = await vscode.authentication.getSession('github', ['read:user'], { createIfNone: !options.silent });
-    if (!session) {
+    console.log(`[DEBUG] Login attempt - silent: ${options.silent}`);
+    
+    try {
+        const session = await vscode.authentication.getSession('github', ['read:user'], { createIfNone: !options.silent });
+        
+        if (!session) {
+            if (!options.silent) {
+                vscode.window.showErrorMessage('GitHub login was cancelled or failed.');
+            }
+            console.log('[DEBUG] No GitHub session obtained');
+            return;
+        }
+
+        console.log('[DEBUG] GitHub session obtained successfully');
+
+        // FIX: Show progress notification immediately
+        await vscode.window.withProgress({
+            location: vscode.ProgressLocation.Notification,
+            title: "Jekyll Buildr: Authenticating...",
+            cancellable: false
+        }, async (progress) => {
+            try {
+                progress.report({ increment: 25, message: "Connecting to Jekyll Buildr server..." });
+                
+                const apiUrl = getApiUrl();
+                console.log(`[DEBUG] Using API URL: ${apiUrl}`);
+                
+                const response = await fetch(`${apiUrl}/api/auth/vscode-login`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ githubToken: session.accessToken }),
+                });
+
+                progress.report({ increment: 50, message: "Verifying credentials..." });
+
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    console.error(`[DEBUG] Backend login failed: ${response.status} - ${errorText}`);
+                    throw new Error(`Backend authentication failed (${response.status}). Please try again.`);
+                }
+
+                const { firebaseCustomToken } = await response.json();
+                console.log('[DEBUG] Firebase custom token received');
+                
+                progress.report({ increment: 75, message: "Signing in to Jekyll Buildr..." });
+                
+                const userCredential = await signInWithCustomToken(auth, firebaseCustomToken);
+                idToken = await userCredential.user.getIdToken();
+                
+                console.log('[DEBUG] Firebase sign-in successful');
+
+                const roleResponse = await fetch(`${apiUrl}/api/getUserRole`, {
+                    headers: { 'Authorization': `Bearer ${idToken}` }
+                });
+
+                if (!roleResponse.ok) {
+                    console.error(`[DEBUG] Role fetch failed: ${roleResponse.status}`);
+                    throw new Error('Could not fetch user role from server.');
+                }
+
+                const userData = await roleResponse.json();
+                currentUser = userData;
+                
+                console.log(`[DEBUG] User data: ${JSON.stringify(currentUser)}`);
+
+                progress.report({ increment: 100, message: "Authentication complete!" });
+
+                // FIX: Set context and send data
+                vscode.commands.executeCommand('setContext', 'jekyllBuildr.isPro', currentUser?.role === 'proUser');
+                postProvider.sendInitialData();
+
+                if (!options.silent) {
+                    vscode.window.showInformationMessage(
+                        `✅ Welcome back, ${currentUser?.displayName || 'User'}! ${currentUser?.role === 'proUser' ? '👑 Pro' : 'Free'} account active.`
+                    );
+                }
+            } catch (error: any) {
+                console.error(`[DEBUG] Error in login progress:`, error);
+                throw error; // Re-throw to be caught by outer catch
+            }
+        });
+        
+    } catch (error: any) {
+        console.error(`[DEBUG] Login error:`, error);
         if (!options.silent) {
-            vscode.window.showErrorMessage('GitHub login was cancelled.');
+            vscode.window.showErrorMessage(`🔐 Jekyll Buildr Login Failed: ${error.message}`);
         }
-        return;
     }
-
-    await vscode.window.withProgress({
-        location: vscode.ProgressLocation.Notification,
-        title: "Authenticating with Jekyll Buildr...",
-        cancellable: false
-    }, async () => {
-        try {
-            const response = await fetch(`${apiUrl}/api/auth/vscode-login`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ githubToken: session.accessToken }),
-            });
-
-            if (!response.ok) throw new Error('Backend login failed. Please try again.');
-
-            const { firebaseCustomToken } = await response.json();
-            const userCredential = await signInWithCustomToken(auth, firebaseCustomToken);
-            idToken = await userCredential.user.getIdToken();
-
-            const roleResponse = await fetch(`${apiUrl}/api/getUserRole`, {
-                headers: { 'Authorization': `Bearer ${idToken}` }
-            });
-
-            if (!roleResponse.ok) throw new Error('Could not fetch user role.');
-
-            const userData = await roleResponse.json();
-            currentUser = userData;
-
-            vscode.commands.executeCommand('setContext', 'jekyllBuildr.isPro', currentUser?.role === 'proUser');
-            postProvider.sendInitialData(); // Kirim data ke webview
-
-            if (!options.silent) {
-                vscode.window.showInformationMessage(`Welcome back, ${currentUser?.displayName}!`);
-            }
-        } catch (error: any) {
-            console.error(error);
-            if (!options.silent) {
-                vscode.window.showErrorMessage(`Login Failed: ${error.message}`);
-            }
-        }
-    });
 }
 
 export function activate(context: vscode.ExtensionContext) {
-    console.log('Jekyll Buildr extension is now active!');
+    console.log('🚀 Jekyll Buildr extension is now active!');
+    
+    // FIX: Show activation notification
+    vscode.window.showInformationMessage('Jekyll Buildr extension loaded successfully!');
 
     const postProvider = new CreatePostViewProvider(context.extensionUri);
     context.subscriptions.push(
@@ -174,150 +222,220 @@ export function activate(context: vscode.ExtensionContext) {
         })
     );
     
-    loginAndFetchUser(postProvider, { silent: true });
+    // FIX: Try silent login on activation with better feedback
+    loginAndFetchUser(postProvider, { silent: true }).catch(error => {
+        console.log('[DEBUG] Silent login failed on activation:', error.message);
+    });
 
-    context.subscriptions.push(vscode.commands.registerCommand('jekyll-buildr.login', () => {
-        loginAndFetchUser(postProvider, { silent: false });
+    // FIX: Enhanced login command
+    context.subscriptions.push(vscode.commands.registerCommand('jekyll-buildr.login', async () => {
+        console.log('[DEBUG] Manual login command triggered');
+        await loginAndFetchUser(postProvider, { silent: false });
     }));
 
+    // FIX: Enhanced post generation with better notifications
     context.subscriptions.push(vscode.commands.registerCommand('jekyll-buildr.generateAndCreatePost', async (payload) => {
+        console.log('[DEBUG] Generate post command triggered:', payload);
+        
         if (!currentUser || !idToken) {
             const selection = await vscode.window.showWarningMessage(
-                'You must be logged in to use this feature.', 'Login', 'Cancel'
+                '🔐 You must be logged in to use AI features.', 'Login Now', 'Cancel'
             );
-            if (selection === 'Login') {
+            if (selection === 'Login Now') {
                 await loginAndFetchUser(postProvider, { silent: false });
+                if (!currentUser || !idToken) {
+                    vscode.window.showErrorMessage('❌ Login failed. Please try again.');
+                    return;
+                }
+            } else {
+                return;
             }
-            return;
         }
 
         await vscode.window.withProgress({
             location: vscode.ProgressLocation.Notification,
-            title: "Jekyll Buildr AI is generating content...",
+            title: `🤖 Generating "${payload.title}"...`,
             cancellable: false
-        }, async () => {
+        }, async (progress) => {
             try {
+                progress.report({ increment: 25, message: "Contacting AI service..." });
+                
+                const apiUrl = getApiUrl();
                 const response = await fetch(`${apiUrl}/api/ai/generatePost`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${idToken}` },
                     body: JSON.stringify(payload),
                 });
+                
+                progress.report({ increment: 75, message: "Processing AI response..." });
+                
                 if (!response.ok) {
                     const errorData = await response.json();
-                    throw new Error(errorData.error || 'Failed to generate post content.');
+                    console.error('[DEBUG] AI generation failed:', errorData);
+                    throw new Error(errorData.error || `Server error: ${response.status}`);
                 }
+                
                 const result = await response.json();
+                progress.report({ increment: 100, message: "Creating post file..." });
+                
                 vscode.commands.executeCommand('jekyll-buildr.createPostFile', result.filename, result.content);
+                
             } catch (error: any) {
-                vscode.window.showErrorMessage(`Generation Failed: ${error.message}`);
+                console.error('[DEBUG] Post generation error:', error);
+                vscode.window.showErrorMessage(`🚫 Post Generation Failed: ${error.message}`);
             }
         });
     }));
 
+    // FIX: Enhanced component generation
     context.subscriptions.push(vscode.commands.registerCommand('jekyll-buildr.generateComponent', async () => {
+        console.log('[DEBUG] Generate component command triggered');
+        
         if (!currentUser || !idToken) {
              const selection = await vscode.window.showWarningMessage(
-                'You must be logged in to use this feature.', 'Login', 'Cancel'
+                '🔐 You must be logged in to use AI features.', 'Login Now', 'Cancel'
             );
-            if (selection === 'Login') {
+            if (selection === 'Login Now') {
                 await loginAndFetchUser(postProvider, { silent: false });
+                if (!currentUser || !idToken) {
+                    vscode.window.showErrorMessage('❌ Login failed. Please try again.');
+                    return;
+                }
+            } else {
+                return;
             }
-            return;
         }
         
         const activeEditor = vscode.window.activeTextEditor;
         const workspaceFolders = vscode.workspace.workspaceFolders;
         if (!workspaceFolders) {
-            vscode.window.showErrorMessage("Please open a project folder first.");
+            vscode.window.showErrorMessage("📁 Please open a project folder first.");
             return;
         }
         const rootPath = workspaceFolders[0].uri.fsPath;
         const activeFilePath = activeEditor ? path.relative(rootPath, activeEditor.document.uri.fsPath) : undefined;
 
         const prompt = await vscode.window.showInputBox({
-            prompt: "Describe the Jekyll component you want to create",
-            placeHolder: activeFilePath ? `e.g., a header for ${activeFilePath}` : "e.g., a responsive navigation bar"
+            prompt: "🎨 Describe the Jekyll component you want to create",
+            placeHolder: activeFilePath ? `e.g., a modern header for ${activeFilePath}` : "e.g., a responsive navigation bar"
         });
 
         if (!prompt) return;
 
         await vscode.window.withProgress({
             location: vscode.ProgressLocation.Notification,
-            title: "Jekyll Buildr AI is generating your component...",
+            title: `🤖 Creating Jekyll component...`,
             cancellable: false
-        }, async () => {
+        }, async (progress) => {
             try {
+                progress.report({ increment: 25, message: "Analyzing context..." });
+                
+                const apiUrl = getApiUrl();
                 const response = await fetch(`${apiUrl}/api/ai/generateComponent`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${idToken}` },
                     body: JSON.stringify({ prompt, activeFilePath }),
                 });
 
+                progress.report({ increment: 75, message: "Generating component code..." });
+
                 if (!response.ok) {
                     const errorData = await response.json();
-                    throw new Error(errorData.error || 'Failed to generate component.');
+                    console.error('[DEBUG] Component generation failed:', errorData);
+                    throw new Error(errorData.error || `Server error: ${response.status}`);
                 }
 
                 const { filename, content } = await response.json();
+                
+                progress.report({ increment: 90, message: "Creating file..." });
+                
                 const absolutePath = path.join(rootPath, filename);
                 const dirName = path.dirname(absolutePath);
                 if (!fs.existsSync(dirName)) {
                     fs.mkdirSync(dirName, { recursive: true });
                 }
                 fs.writeFileSync(absolutePath, content, 'utf8');
+                
+                progress.report({ increment: 100, message: "Done!" });
+                
                 const doc = await vscode.workspace.openTextDocument(absolutePath);
                 await vscode.window.showTextDocument(doc);
-                vscode.window.showInformationMessage(`Component '${filename}' created successfully!`);
+                vscode.window.showInformationMessage(`✅ Component '${filename}' created successfully!`);
+                
             } catch (error: any) {
-                vscode.window.showErrorMessage(`Generation Failed: ${error.message}`);
+                console.error('[DEBUG] Component generation error:', error);
+                vscode.window.showErrorMessage(`🚫 Component Generation Failed: ${error.message}`);
             }
         });
     }));
 
-    context.subscriptions.push(vscode.commands.registerCommand('jekyll-buildr.createPostFile', (filename: string, content: string) => {
+    // FIX: Enhanced file creation with better notifications
+    context.subscriptions.push(vscode.commands.registerCommand('jekyll-buildr.createPostFile', async (filename: string, content: string) => {
+        console.log('[DEBUG] Creating post file:', filename);
+        
         const workspaceFolders = vscode.workspace.workspaceFolders;
         if (!workspaceFolders) {
-            vscode.window.showErrorMessage("Please open a project folder first.");
+            vscode.window.showErrorMessage("📁 Please open a project folder first.");
             return;
         }
+        
         const rootPath = workspaceFolders[0].uri.fsPath;
         const postsPath = path.join(rootPath, '_posts');
-        if (!fs.existsSync(postsPath)) {
-            fs.mkdirSync(postsPath, { recursive: true });
-        }
-        const filePath = path.join(postsPath, filename);
-        fs.writeFile(filePath, content, 'utf8', (err) => {
-            if (err) {
-                vscode.window.showErrorMessage(`Failed to create file: ${err.message}`);
-                return;
+        
+        try {
+            if (!fs.existsSync(postsPath)) {
+                fs.mkdirSync(postsPath, { recursive: true });
+                console.log('[DEBUG] Created _posts directory');
             }
-            vscode.workspace.openTextDocument(filePath).then(doc => {
-                vscode.window.showTextDocument(doc);
-            });
-            vscode.window.showInformationMessage(`Successfully created ${filename}`);
-        });
+            
+            const filePath = path.join(postsPath, filename);
+            fs.writeFileSync(filePath, content, 'utf8');
+            
+            console.log('[DEBUG] Post file written successfully');
+            
+            const doc = await vscode.workspace.openTextDocument(filePath);
+            await vscode.window.showTextDocument(doc);
+            
+            vscode.window.showInformationMessage(`✅ Post "${filename}" created and opened!`);
+            
+        } catch (error: any) {
+            console.error('[DEBUG] File creation error:', error);
+            vscode.window.showErrorMessage(`❌ Failed to create post: ${error.message}`);
+        }
     }));
     
-    // --- DEBUGGING BOILERPLATE: MELEWATI DIALOG KONFIRMASI ---
+    // FIX: Enhanced boilerplate creation with detailed progress
     context.subscriptions.push(vscode.commands.registerCommand('jekyll-buildr.scaffoldBoilerplate', async () => {
-        console.log('[DEBUG] Boilerplate command triggered.');
+        console.log('[DEBUG] Boilerplate command triggered');
 
         const workspaceFolders = vscode.workspace.workspaceFolders;
         if (!workspaceFolders) {
-            vscode.window.showErrorMessage("Please open a project folder first to create boilerplate.");
+            vscode.window.showErrorMessage("📁 Please open a project folder first to create boilerplate.");
             return;
         }
+        
         const rootPath = workspaceFolders[0].uri.fsPath;
         console.log(`[DEBUG] Workspace root path: ${rootPath}`);
         
+        // FIX: Show confirmation dialog
+        const confirm = await vscode.window.showWarningMessage(
+            `🏗️ This will create a Jekyll boilerplate structure in:\n${rootPath}\n\nContinue?`,
+            'Yes, Create Boilerplate', 'Cancel'
+        );
+        
+        if (confirm !== 'Yes, Create Boilerplate') {
+            vscode.window.showInformationMessage('Boilerplate creation cancelled.');
+            return;
+        }
+        
         await vscode.window.withProgress({
             location: vscode.ProgressLocation.Notification,
-            title: "Creating Jekyll Boilerplate...",
+            title: "🏗️ Creating Jekyll Boilerplate...",
             cancellable: false
         }, async (progress) => {
             try {
-                console.log('[DEBUG] Inside withProgress callback.');
-                progress.report({ increment: 10, message: "Creating directories..." });
+                console.log('[DEBUG] Starting boilerplate creation');
+                progress.report({ increment: 10, message: "Creating directory structure..." });
 
                 const createStructure = (nodes: any[], currentBasePath: string) => {
                     for (const node of nodes) {
@@ -325,6 +443,7 @@ export function activate(context: vscode.ExtensionContext) {
                         if (node.type === 'folder') {
                             if (!fs.existsSync(fullPath)) {
                                 fs.mkdirSync(fullPath, { recursive: true });
+                                console.log(`[DEBUG] Created directory: ${fullPath}`);
                             }
                             if (node.children) {
                                 createStructure(node.children, fullPath);
@@ -334,110 +453,156 @@ export function activate(context: vscode.ExtensionContext) {
                 };
                 
                 createStructure(JEKYLL_BOILERPLATE_STRUCTURE, rootPath);
-                console.log('[DEBUG] Directory structure created.');
+                console.log('[DEBUG] Directory structure created');
                 
-                progress.report({ increment: 50, message: "Writing files..." });
+                progress.report({ increment: 50, message: "Writing configuration files..." });
+
+                let filesCreated = 0;
+                const totalFiles = Object.keys(JEKYLL_BOILERPLATE_CONTENTS).length;
 
                 for (const filePath in JEKYLL_BOILERPLATE_CONTENTS) {
                     const absolutePath = path.join(rootPath, filePath);
                     const content = JEKYLL_BOILERPLATE_CONTENTS[filePath as keyof typeof JEKYLL_BOILERPLATE_CONTENTS];
                     const dirName = path.dirname(absolutePath);
+                    
                     if (!fs.existsSync(dirName)) {
                         fs.mkdirSync(dirName, { recursive: true });
                     }
+                    
                     fs.writeFileSync(absolutePath, content, 'utf8');
+                    filesCreated++;
+                    
+                    // Update progress
+                    const progressIncrement = 40 * (filesCreated / totalFiles);
+                    progress.report({ 
+                        increment: progressIncrement, 
+                        message: `Writing files... (${filesCreated}/${totalFiles})`
+                    });
+                    
+                    console.log(`[DEBUG] Created file: ${absolutePath}`);
                 }
                 
-                console.log('[DEBUG] Files written successfully.');
-                progress.report({ increment: 100, message: "Done!" });
-                vscode.window.showInformationMessage('Jekyll boilerplate created successfully!');
+                console.log('[DEBUG] All files written successfully');
+                progress.report({ increment: 100, message: "Boilerplate created!" });
+                
+                // FIX: Show success with action buttons
+                const action = await vscode.window.showInformationMessage(
+                    `✅ Jekyll boilerplate created successfully!\n📁 ${filesCreated} files created in ${path.basename(rootPath)}`,
+                    'Open _config.yml', 'Open README.md', 'Done'
+                );
+                
+                if (action === 'Open _config.yml') {
+                    const configPath = path.join(rootPath, '_config.yml');
+                    const doc = await vscode.workspace.openTextDocument(configPath);
+                    await vscode.window.showTextDocument(doc);
+                } else if (action === 'Open README.md') {
+                    const readmePath = path.join(rootPath, 'README.md');
+                    const doc = await vscode.workspace.openTextDocument(readmePath);
+                    await vscode.window.showTextDocument(doc);
+                }
 
             } catch (error: any) {
-                console.error(`[DEBUG] ERROR caught in withProgress:`, error);
-                vscode.window.showErrorMessage(`Failed to create boilerplate: ${error.message}`);
+                console.error(`[DEBUG] Boilerplate creation error:`, error);
+                vscode.window.showErrorMessage(`❌ Failed to create boilerplate: ${error.message}`);
             }
         });
-        console.log('[DEBUG] After withProgress call.');
     }));
 
-    // --- PERINTAH BARU UNTUK UPGRADE ---
-    context.subscriptions.push(vscode.commands.registerCommand('jekyll-buildr.upgradeToPro', () => {
-        vscode.window.showInformationMessage("Redirecting you to upgrade to Jekyll Buildr Pro...");
-        // Buka link ke halaman upgrade di webapp
-        vscode.env.openExternal(vscode.Uri.parse(`${apiUrl}/pricing`));
+    // FIX: Enhanced upgrade command
+    context.subscriptions.push(vscode.commands.registerCommand('jekyll-buildr.upgradeToPro', async () => {
+        const apiUrl = getApiUrl();
+        vscode.window.showInformationMessage("🚀 Redirecting to Jekyll Buildr Pro upgrade page...");
+        vscode.env.openExternal(vscode.Uri.parse(`${apiUrl}/settings`));
     }));
 
-    // --- COMMAND BARU UNTUK GENERATE IMAGE ---
+    // FIX: Enhanced image generation
     context.subscriptions.push(vscode.commands.registerCommand('jekyll-buildr.generateImage', async () => {
-        // Cek login
+        console.log('[DEBUG] Generate image command triggered');
+        
         if (!currentUser || !idToken) {
             const selection = await vscode.window.showWarningMessage(
-               'You must be logged in to use this feature.', 'Login', 'Cancel'
+               '🔐 You must be logged in to use AI image generation.', 'Login Now', 'Cancel'
            );
-           if (selection === 'Login') {
+           if (selection === 'Login Now') {
                await loginAndFetchUser(postProvider, { silent: false });
+               if (!currentUser || !idToken) {
+                   vscode.window.showErrorMessage('❌ Login failed. Please try again.');
+                   return;
+               }
+           } else {
+               return;
            }
-           return;
        }
 
         const workspaceFolders = vscode.workspace.workspaceFolders;
         if (!workspaceFolders) {
-            vscode.window.showErrorMessage("Please open a project folder first.");
+            vscode.window.showErrorMessage("📁 Please open a project folder first.");
             return;
         }
         const rootUri = workspaceFolders[0].uri;
 
-        // Minta prompt dari user
         const prompt = await vscode.window.showInputBox({
-            prompt: "Describe the image you want to create",
+            prompt: "🎨 Describe the image you want to create",
             placeHolder: "e.g., a futuristic cat wearing sunglasses, cyberpunk style"
         });
 
-        if (!prompt) return; // User membatalkan
+        if (!prompt) return;
 
         await vscode.window.withProgress({
             location: vscode.ProgressLocation.Notification,
-            title: "Jekyll Buildr AI is creating your image...",
+            title: "🤖 Creating AI image...",
             cancellable: false
         }, async (progress) => {
             try {
+                progress.report({ increment: 25, message: "Sending request to AI..." });
+                
+                const apiUrl = getApiUrl();
                 const response = await fetch(`${apiUrl}/api/ai/generateImage`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${idToken}` },
                     body: JSON.stringify({ prompt }),
                 });
 
+                progress.report({ increment: 75, message: "Processing image..." });
+
                 if (!response.ok) {
                     const errorData = await response.json();
-                    throw new Error(errorData.error || 'Failed to generate image.');
+                    console.error('[DEBUG] Image generation failed:', errorData);
+                    throw new Error(errorData.error || `Server error: ${response.status}`);
                 }
 
                 const { filename, content } = await response.json();
 
-                // `content` adalah data URI (e.g., "data:image/webp;base64,iVBORw...")
-                // Kita perlu mengambil bagian base64-nya saja
+                progress.report({ increment: 90, message: "Saving image..." });
+
                 const base64Data = content.split(',')[1];
                 const imageBuffer = Buffer.from(base64Data, 'base64');
-
-                // Tentukan path untuk menyimpan gambar
                 const imagePath = vscode.Uri.joinPath(rootUri, 'assets', 'images', filename);
 
-                // Buat direktori jika belum ada
                 await vscode.workspace.fs.createDirectory(vscode.Uri.joinPath(rootUri, 'assets', 'images'));
-
-                // Simpan file
                 await vscode.workspace.fs.writeFile(imagePath, imageBuffer);
 
-                vscode.window.showInformationMessage(`Image '${filename}' saved successfully in assets/images!`);
+                progress.report({ increment: 100, message: "Image saved!" });
+
+                const action = await vscode.window.showInformationMessage(
+                    `✅ Image '${filename}' created successfully!`, 
+                    'Open Image', 'Show in Explorer'
+                );
                 
-                // Buka gambar yang baru dibuat
-                vscode.commands.executeCommand('vscode.open', imagePath);
+                if (action === 'Open Image') {
+                    vscode.commands.executeCommand('vscode.open', imagePath);
+                } else if (action === 'Show in Explorer') {
+                    vscode.commands.executeCommand('revealFileInOS', imagePath);
+                }
 
             } catch (error: any) {
-                vscode.window.showErrorMessage(`Image Generation Failed: ${error.message}`);
+                console.error('[DEBUG] Image generation error:', error);
+                vscode.window.showErrorMessage(`🚫 Image Generation Failed: ${error.message}`);
             }
         });
     }));
 }
 
-export function deactivate() {}
+export function deactivate() {
+    console.log('Jekyll Buildr extension deactivated');
+}

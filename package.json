@@ -5,6 +5,10 @@
   "version": "0.1.4",
   "publisher": "daffadev",
   "icon": "media/icon.png",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/daffadevhosting/jekyll-buidr-vscode.git"
+  },
   "engines": {
     "vscode": "^1.85.0"
   },
@@ -20,6 +24,16 @@
   "activationEvents": [],
   "main": "./dist/extension.js",
   "contributes": {
+    "configuration": {
+      "title": "Jekyll Buildr",
+      "properties": {
+        "jekyllBuildr.apiUrl": {
+          "type": "string",
+          "default": "https://jekyll-buildr.vercel.app",
+          "description": "Jekyll Buildr API URL"
+        }
+      }
+    },
     "commands": [
       {
         "command": "jekyll-buildr.login",
