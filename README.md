@@ -9,7 +9,9 @@ Supercharge alur kerja Jekyll Anda langsung di dalam Visual Studio Code. Ekstens
 
 ## 🚧 Status Release
 
-Harap dicatat bahwa ekstensi ini masih dalam tahap **pengembangan**. Fitur-fitur mungkin masih dalam pengembangan dan Anda mungkin akan menemukan bug. Masukan Anda sangat kami hargai!
+Fitur-fitur mungkin masih dalam pengembangan dan Anda mungkin akan menemukan bug. Masukan Anda sangat kami hargai!
+
+[CHANGELOG](/CHANGELOG.md)
 
 ## ✨ Fitur Utama
 
@@ -61,4 +63,4 @@ Gunakan sidebar untuk membuat konten dengan cepat.
 
 ## 📄 Lisensi
 
-Proyek ini dirilis di bawah Lisensi CC0 1.0 Universal.
+Proyek ini dirilis di bawah Lisensi [CC0 1.0 Universal](LICENSE).

@@ -4,6 +4,69 @@ All notable changes to the **Jekyll Buildr** VS Code extension will be documente
 
 ---
 
+## [0.1.4] - 2025-08-24
+
+### Update/Change
+
+- **`Jekyll Buildr: Create Jekyll Boilerplate` Command**  
+  Enhances your Jekyll boilerplate with the latest Tailwind CSS CDN and a more comprehensive structure.
+
+- A significantly more complete Jekyll boilerplate featuring the following:
+
+---
+
+### ✨ Newly Added Features
+
+#### 🎨 Tailwind CSS Integration
+- Uses the latest Tailwind CSS CDN  
+- Typography plugin for beautifully styled blog content  
+- Custom SCSS for additional styling  
+- Mobile-first responsive design  
+
+#### 📱 Complete Layouts
+- `home.html` – Landing page with hero section  
+- `page.html` – Template for static pages  
+- `post.html` – Blog post template with navigation  
+- Responsive `navigation` with mobile menu  
+
+#### 🔧 Reusable Components
+- `head.html` – Meta tags, CDN links, and SEO setup  
+- `navigation.html` – Dynamic navigation menu  
+- `post-card.html` – Card component for post previews  
+- `header.html` & `footer.html` – Modern header and footer  
+
+#### 📊 Data Files
+- `navigation.yml` – Menu configuration  
+- `social.yml` – Social media links with icons  
+
+#### 🛠 Full Configuration
+- `_config.yml` with SEO, sitemap, and feed plugins  
+- `Gemfile` with all required dependencies  
+- Comprehensive `.gitignore`  
+- `README.md` with complete documentation  
+
+#### 📝 Content Ready
+- Sample blog post with complete front matter  
+- About page template  
+- Blog listing page  
+- Landing page with hero section  
+
+#### 🎯 SEO & Performance
+- Jekyll SEO Tag plugin  
+- Sitemap generation  
+- RSS feed  
+- Optimized meta tags  
+- Font Awesome icons  
+- Responsive images  
+
+#### 📱 Interactive Features
+- Mobile hamburger menu powered by JavaScript  
+- Smooth scrolling  
+- Hover effects and animations  
+- Intersection Observer for fade-in effects  
+
+---
+
 ## [0.1.3] - 2025-08-22
 
 ### Added

@@ -364,7 +364,7 @@ export function activate(context: vscode.ExtensionContext) {
     context.subscriptions.push(vscode.commands.registerCommand('jekyll-buildr.upgradeToPro', () => {
         vscode.window.showInformationMessage("Redirecting you to upgrade to Jekyll Buildr Pro...");
         // Buka link ke halaman upgrade di webapp
-        vscode.env.openExternal(vscode.Uri.parse(`${apiUrl}/settings`));
+        vscode.env.openExternal(vscode.Uri.parse(`${apiUrl}/pricing`));
     }));
 
     // --- COMMAND BARU UNTUK GENERATE IMAGE ---
