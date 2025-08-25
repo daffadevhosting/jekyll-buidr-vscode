@@ -414,13 +414,14 @@ export function activate(context: vscode.ExtensionContext) {
             return;
         }
         
-        const rootPath = workspaceFolders[0].uri.fsPath;
-        console.log(`[DEBUG] Workspace root path: ${rootPath}`);
+        // Use the Uri object, not the string fsPath
+        const rootUri = workspaceFolders[0].uri;
+        console.log(`[DEBUG] Workspace root URI: ${rootUri.toString()}`);
         
-        // FIX: Show confirmation dialog
         const confirm = await vscode.window.showWarningMessage(
-            `🏗️ This will create a Jekyll boilerplate structure in:\n${rootPath}\n\nContinue?`,
-            'Yes, Create Boilerplate', 'Cancel'
+            `🏗️ This will create a Jekyll boilerplate structure in your current workspace.\n\nContinue?`,
+            { modal: true }, // Use a modal dialog for confirmation
+            'Yes, Create Boilerplate'
         );
         
         if (confirm !== 'Yes, Create Boilerplate') {
@@ -434,70 +435,59 @@ export function activate(context: vscode.ExtensionContext) {
             cancellable: false
         }, async (progress) => {
             try {
-                console.log('[DEBUG] Starting boilerplate creation');
-                progress.report({ increment: 10, message: "Creating directory structure..." });
+                // Use vscode.workspace.fs for all file operations
+                const fs = vscode.workspace.fs;
 
-                const createStructure = (nodes: any[], currentBasePath: string) => {
-                    for (const node of nodes) {
-                        const fullPath = path.join(currentBasePath, node.name);
-                        if (node.type === 'folder') {
-                            if (!fs.existsSync(fullPath)) {
-                                fs.mkdirSync(fullPath, { recursive: true });
-                                console.log(`[DEBUG] Created directory: ${fullPath}`);
-                            }
-                            if (node.children) {
-                                createStructure(node.children, fullPath);
-                            }
-                        }
+                // Create a list of all files and directories to be created
+                const allFiles = Object.keys(JEKYLL_BOILERPLATE_CONTENTS);
+                const allDirs = new Set<string>();
+
+                // Add all parent directories to the set
+                allFiles.forEach(f => {
+                    const dir = path.dirname(f);
+                    if (dir !== '.') {
+                        dir.split(path.sep).reduce((acc, part) => {
+                            const current = path.join(acc, part);
+                            allDirs.add(current);
+                            return current;
+                        }, '');
                     }
-                };
-                
-                createStructure(JEKYLL_BOILERPLATE_STRUCTURE, rootPath);
-                console.log('[DEBUG] Directory structure created');
-                
-                progress.report({ increment: 50, message: "Writing configuration files..." });
+                });
 
-                let filesCreated = 0;
-                const totalFiles = Object.keys(JEKYLL_BOILERPLATE_CONTENTS).length;
-
-                for (const filePath in JEKYLL_BOILERPLATE_CONTENTS) {
-                    const absolutePath = path.join(rootPath, filePath);
-                    const content = JEKYLL_BOILERPLATE_CONTENTS[filePath as keyof typeof JEKYLL_BOILERPLATE_CONTENTS];
-                    const dirName = path.dirname(absolutePath);
-                    
-                    if (!fs.existsSync(dirName)) {
-                        fs.mkdirSync(dirName, { recursive: true });
+                // Also add empty dirs from the structure definition
+                JEKYLL_BOILERPLATE_STRUCTURE.forEach(node => {
+                    if(node.type === 'folder') {
+                        allDirs.add(node.path);
                     }
-                    
-                    fs.writeFileSync(absolutePath, content, 'utf8');
-                    filesCreated++;
-                    
-                    // Update progress
-                    const progressIncrement = 40 * (filesCreated / totalFiles);
-                    progress.report({ 
-                        increment: progressIncrement, 
-                        message: `Writing files... (${filesCreated}/${totalFiles})`
-                    });
-                    
-                    console.log(`[DEBUG] Created file: ${absolutePath}`);
+                });
+
+                // Create all directories first
+                progress.report({ increment: 10, message: "Creating directories..." });
+                for (const dir of Array.from(allDirs)) {
+                    const dirUri = vscode.Uri.joinPath(rootUri, dir);
+                    await fs.createDirectory(dirUri);
                 }
                 
-                console.log('[DEBUG] All files written successfully');
+                progress.report({ increment: 40, message: "Writing files..." });
+
+                // Write all files
+                for (const filePath of allFiles) {
+                    const fileUri = vscode.Uri.joinPath(rootUri, filePath);
+                    const contentStr = JEKYLL_BOILERPLATE_CONTENTS[filePath as keyof typeof JEKYLL_BOILERPLATE_CONTENTS];
+                    const contentBytes = new TextEncoder().encode(contentStr);
+                    await fs.writeFile(fileUri, contentBytes);
+                }
+
                 progress.report({ increment: 100, message: "Boilerplate created!" });
                 
-                // FIX: Show success with action buttons
                 const action = await vscode.window.showInformationMessage(
-                    `✅ Jekyll boilerplate created successfully!\n📁 ${filesCreated} files created in ${path.basename(rootPath)}`,
-                    'Open _config.yml', 'Open README.md', 'Done'
+                    `✅ Jekyll boilerplate created successfully!`,
+                    'Open _config.yml', 'Done'
                 );
                 
                 if (action === 'Open _config.yml') {
-                    const configPath = path.join(rootPath, '_config.yml');
-                    const doc = await vscode.workspace.openTextDocument(configPath);
-                    await vscode.window.showTextDocument(doc);
-                } else if (action === 'Open README.md') {
-                    const readmePath = path.join(rootPath, 'README.md');
-                    const doc = await vscode.workspace.openTextDocument(readmePath);
+                    const configUri = vscode.Uri.joinPath(rootUri, '_config.yml');
+                    const doc = await vscode.workspace.openTextDocument(configUri);
                     await vscode.window.showTextDocument(doc);
                 }
 

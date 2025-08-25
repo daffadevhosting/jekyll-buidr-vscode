@@ -2,7 +2,7 @@
   "name": "jekyll-buildr",
   "displayName": "Jekyll Builder",
   "description": "AI-powered Jekyll editing right in your VS Code.",
-  "version": "0.1.4",
+  "version": "0.1.5",
   "publisher": "daffadev",
   "icon": "media/icon.png",
   "repository": {

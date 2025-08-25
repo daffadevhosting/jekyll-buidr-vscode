@@ -11,8 +11,6 @@ Supercharge alur kerja Jekyll Anda langsung di dalam Visual Studio Code. Ekstens
 
 Fitur-fitur mungkin masih dalam pengembangan dan Anda mungkin akan menemukan bug. Masukan Anda sangat kami hargai!
 
-[CHANGELOG](/CHANGELOG.md)
-
 ## ✨ Fitur Utama
 
 * **🤖 AI Post Generator**: Buat postingan blog baru dari sidebar. Cukup berikan judul, dan AI akan membuatkan konten Markdown yang relevan lengkap dengan *front matter*.
@@ -63,4 +61,4 @@ Gunakan sidebar untuk membuat konten dengan cepat.
 
 ## 📄 Lisensi
 
-Proyek ini dirilis di bawah Lisensi [CC0 1.0 Universal](LICENSE).
+Proyek ini dirilis di bawah Lisensi CC0 1.0 Universal.

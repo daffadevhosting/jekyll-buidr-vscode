@@ -98,14 +98,14 @@ description: >- # this means to ignore newlines until "baseurl:"
 baseurl: "" # the subpath of your site, e.g. /blog
 url: "" # the base hostname & protocol for your site, e.g. http://example.com
 twitter_username: jekyllrb
-github_username: jekyll
+github_username: daffadevhosting
 
 # Social Media
 social:
   name: Your Name
   links:
     - https://twitter.com/jekyllrb
-    - https://github.com/jekyll-buildr
+    - https://github.com/daffadevhosting/jekyll-buildr
 
 # Build settings
 markdown: kramdown
@@ -494,8 +494,8 @@ title: "Welcome to Jekyll!"
 date: 2025-08-24 12:00:00 +0700
 categories: jekyll update
 tags: [jekyll, blog, tutorial]
-author: Your Name
-image: /assets/images/jekyll-welcome.jpg
+author: Jekyll Buildr
+image: "https://placehold.co/600x400?text=Jekyll-World"
 ---
 
 You'll find this post in your \`_posts\` directory. Go ahead and edit it and re-build the site to see your changes. You can rebuild the site in many different ways, but the most common way is to run \`jekyll serve\`, which launches a web server and auto-regenerates your site when a file is updated.

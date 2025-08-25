@@ -4,6 +4,15 @@ All notable changes to the **Jekyll Buildr** VS Code extension will be documente
 
 ---
 
+## [0.1.5] - 2025-08-24
+
+### Update/Change
+
+- **`Jekyll Buildr: Create Jekyll Boilerplate` Command**  
+  Fixed a bug when generating the jekyll boilerplate..
+
+---
+
 ## [0.1.4] - 2025-08-24
 
 ### Update/Change
@@ -12,8 +21,6 @@ All notable changes to the **Jekyll Buildr** VS Code extension will be documente
   Enhances your Jekyll boilerplate with the latest Tailwind CSS CDN and a more comprehensive structure.
 
 - A significantly more complete Jekyll boilerplate featuring the following:
-
----
 
 ### ✨ Newly Added Features
 
